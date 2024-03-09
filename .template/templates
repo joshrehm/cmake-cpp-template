@@ -1,0 +1,12 @@
+# Files listed here using glob syntax will have variables expanded
+cmake/$\{PROJECT_NAME_PASCAL}Options.cmake
+cmake/$\{PROJECT_NAME_PASCAL}Toolchain.cmake
+include/$\{PROJECT_NAME_SNAKE\}/$\{PROJECT_NAME_SNAKE\}.h
+src/$\{PROJECT_NAME_SNAKE\}.cpp
+src/CMakeLists.txt
+tests/$\{PROJECT_NAME_SNAKE\}_tests.cpp
+tests/CMakeLists.txt
+$\{PROJECT_NAME_SNAKE\}_version.h.in
+CMakeLists.txt
+CMakePresets.json
+README.md

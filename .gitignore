@@ -1,3 +1,15 @@
+# Configuration and build output folders
+.bin
+.build
+.conan
+
+# User Files
+CMakeUserPresets.js
+
+# IDE Folders
+.vs
+.vscode
+
 # Prerequisites
 *.d
 
