@@ -25,17 +25,24 @@
     The name of the project. This name will be used for variable expansion in
     the project.
 
+    .PARAMETER Namespace
+    The project namespace. Defaults to `Project` in snake case.
+
     .PARAMETER Force
     Force project creation even if the target Path is not empty
 #>
-[CmdletBinding()]
+[CmdletBinding(PositionalBinding=$false)]
 param(
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory=$true, Position=0)]
     [string]$Project,
 
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory=$true, Position=1)]
     [string]$Path,
 
+    [Parameter()]
+    [string]$Namespace=$null,
+
+    [Parameter()]
     [switch]$Force
 )
 
@@ -271,6 +278,10 @@ if (!$Force -and (Test-Path $Path) -and @(Get-ChildItem $Path).Length -gt 0) {
     Write-Error "Directory is not empty"
 }
 
+if (!$Namespace) {
+    $Namespace = ConvertTo-SnakeCase $Project
+}
+
 mkdir $Path -Force | Out-Null
 
 # Find our template directory based on the location of this script
@@ -285,6 +296,8 @@ $replacements = @{
     PROJECT_NAME_CAMEL  = ConvertTo-CamelCase $Project
     PROJECT_NAME_SNAKE  = ConvertTo-SnakeCase $Project
     PROJECT_NAME_DEFINE = (ConvertTo-SnakeCase $Project).ToUpper()
+
+    PROJECT_NAMESPACE   = $Namespace
 }
 Write-Verbose "VARIABLES:"
 Write-Verbose "  PROJECT_NAME:        $($replacements.PROJECT_NAME)"

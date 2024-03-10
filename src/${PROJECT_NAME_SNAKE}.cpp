@@ -1,2 +1,6 @@
 #include"${PROJECT_NAME_SNAKE}/${PROJECT_NAME_SNAKE}.h"
 
+namespace ${PROJECT_NAMESPACE} {
+
+}
+
