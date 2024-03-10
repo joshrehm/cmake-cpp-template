@@ -1,4 +1,7 @@
-# Files listed here using glob syntax will have variables expanded
+#
+# This list of files, in the template source directory, will have their 
+# variables expanded. Note that paths are always expanded.
+#
 cmake/$\{PROJECT_NAME_PASCAL}Options.cmake
 cmake/$\{PROJECT_NAME_PASCAL}Toolchain.cmake
 include/$\{PROJECT_NAME_SNAKE\}/$\{PROJECT_NAME_SNAKE\}.h
@@ -9,4 +12,3 @@ tests/CMakeLists.txt
 $\{PROJECT_NAME_SNAKE\}_version.h.in
 CMakeLists.txt
 CMakePresets.json
-README.md

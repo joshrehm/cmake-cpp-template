@@ -1,7 +1,7 @@
 # Modern CMake C++ Template
 
-This is an opinionated CMake template for C++ development. It includes cppcheck and 
-Conan2 support.
+This is an opinionated CMake template for C++ development. It integrates ninja, 
+cppcheck, conan2, and catch2 support.
 
 Default compiler flags and preprocessor definitions are provided for the MSVC compiler
 on Windows. However, it should be fairly easy to add GCC or Clang flags by modifying
@@ -25,7 +25,7 @@ This will create the project "Project Name" in the `~/path/to/project` directory
 
 # Building the project
 
-To configure and build the project, use CMake. The resulting project cmake files 
+To configure and build the project, use CMake. The resulting project cmake files
 automatically invoke the conan package manager to download and build packages.
 
 Note that the CMake presets defined in `CMakeUserPresets.json` are identical to the conan
@@ -40,5 +40,5 @@ The resulting binaries are, by default, stored in the '.bin' directory. This can
 changed by setting the `PROJECT_OUTPUT_PATH` or `PROJECT_NAME_OUTPUT_PATH` CMake cache
 variables.
 
-To see a list of available CMake cache variables, refer to the 
+To see a list of available CMake cache variables, refer to the
 `cmake/ProjectNameOptions.cmake` and `cmake/StandardOptions.cmake` files.

@@ -153,20 +153,21 @@ function ConvertFrom-GlobSyntax($Glob) {
             # Escape Sequence
             '\' {
                 if ($n -eq $null) {
-                    throw 'Invalid Glob Syntax';
+                    throw 'Invalid Glob Syntax'
                 }
                 $regex += [regex]::Escape($n)
                 ++$i
             }
             # Comment
             '#' {
-                break
+                $i = $Glob.length
+                continue
             }
             # * or **
             '*' {
                 if ($n -eq '*') {    # ** means match everything
-                    $regex += '.*';
-                    ++$i
+                    $regex += '.*?'
+                    $i += 2;         # Also consumes the /; this won't match otherwise
                 }
                 else {               # * means match this directory (match until the next /)
                     $regex += '[^/]*'
@@ -202,12 +203,9 @@ function ConvertFrom-GlobSyntax($Glob) {
         ++$i
     }
  
-    $regex += '$'
-    if ($regex[0] -eq '/') {
-        $regex = '^' + $regex.Substring(1)
+    if (![string]::IsNullOrEmpty($regex)) {
+        $regex + '$'
     }
- 
-    $regex
 }
  
 # Loads expandable paths from the templates file and converts glob patterns
@@ -217,12 +215,28 @@ function Get-ExpansionPaths($Path) {
         $line = $_.Trim()
         if (![string]::IsNullOrEmpty($line)) {
             if ($line[0] -ne '#') {
-                ConvertFrom-GlobSyntax $line
+                $regex = ConvertFrom-GlobSyntax $line
+                if (![string]::IsNullOrEmpty($regex)) {
+                    $regex
+                }
             }
         }
     }
 }
- 
+function ConvertTo-AbsoluteRegexPath($path, $regexes) {
+    $regexes | ForEach-Object {
+        $pattern = $_
+        $regexPath = [regex]::Escape($path.Replace('\', '/'))
+        if (!$regexPath.EndsWith('/')) {
+            $regexPath += '/'
+        }
+        if ($pattern.StartsWith('/')) {
+            $pattern = $_.Substring(1)
+        }
+        '^' + $regexPath + $pattern
+    }
+}
+
 # Tests if a path matches an expansion pattern
 function Test-PathPattern($Patterns, $Path) {
     $Path = $Path -replace '\\', '/'
@@ -256,10 +270,12 @@ function Expand-File($Replacements, $FilePath) {
 if (!$Force -and (Test-Path $Path) -and @(Get-ChildItem $Path).Length -gt 0) {
     Write-Error "Directory is not empty"
 }
- 
+
+mkdir $Path -Force | Out-Null
+
 # Find our template directory based on the location of this script
 $source = Split-Path $PSScriptRoot -Parent
-Write-Verbose "PROJECT TARGET:  $Path"
+Write-Verbose "PROJECT TARGET:  $(Resolve-Path $Path)"
 Write-Verbose "TEMPLATE SOURCE: $source"
 
 # Create a map of variable names to values
@@ -282,12 +298,16 @@ $files = Get-ChildItem $source -Recurse -File
 
 # Filter out ignored files. This could be smarter. Perhaps something in the template 
 # file like our globs?
-$ignorePaths = @('.template')
-$files = $files | Where-Object { $ignorePaths -notcontains (Split-Path (Split-Path $_.FullName -Parent) -Leaf) }
+$ignoreGlobs = @(
+    '/.template/**/*',
+    '/README.md'
+) | ForEach-Object { ConvertFrom-GlobSyntax $_ }
+$ignoreGlobs = ConvertTo-AbsoluteRegexPath $source $ignoreGlobs
+$files = $files | Where-Object { (Test-PathPattern $ignoreGlobs $_.FullName) -eq $false }
 
 # Process the result
 Write-Verbose "GENERATING:"
-$expandPatterns = Get-ExpansionPaths $source
+$expandPatterns = ConvertTo-AbsoluteRegexPath $source (Get-ExpansionPaths $source)
 $files | ForEach-Object {
     $source_file = $_.FullName
 
@@ -296,13 +316,21 @@ $files | ForEach-Object {
     $targetPath = Expand-Text $replacements $targetPath
 
     $targetDir = Split-Path $targetPath -Parent
-    Write-Verbose "  COPY: $source_file -> $targetPath"
 
     mkdir $targetDir -Force | Out-Null
     Copy-Item $source_file $targetPath
+    Write-Verbose "  COPY: $source_file -> $(Resolve-Path $targetPath)"
 
     if (Test-PathPattern $expandPatterns $source_file) {
-        Write-Verbose "EXPAND: $targetPath"
         Expand-File $replacements $targetPath
+        Write-Verbose "EXPAND: $(Resolve-Path $targetPath)"
     }
+}
+
+if (Test-Path '.template/README.md') {
+    Copy-Item '.template/README.md' $Path
+    Write-Verbose "  COPY: $(Resolve-Path .template/README.md) -> $(Resolve-Path $Path/README.md)"
+
+    Expand-File $replacements "$Path/README.md"
+    Write-Verbose "EXPAND: $(Resolve-Path $Path/README.md)"
 }
